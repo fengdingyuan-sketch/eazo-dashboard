@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EAZO 海外社媒数据看板</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #F7F5F2;
+      --surface: #FFFFFF;
+      --surface-elevated: #FDFCFA;
+      --text-main: #1E1B18;
+      --text-secondary: #6B6560;
+      --text-tertiary: #9A948D;
+      --border: rgba(30, 27, 24, 0.08);
+      --border-strong: rgba(30, 27, 24, 0.14);
+      --primary: #D86A45;
+      --primary-light: #E88B6A;
+      --primary-soft: #FCECE6;
+      --accent-gold: #C7A45E;
+      --accent-olive: #7A8B6E;
+      --accent-slate: #5E718B;
+      --success: #5A8F6A;
+      --warning: #C7A45E;
+      --danger: #C45C52;
+      --radius: 20px;
+      --radius-sm: 14px;
+      --shadow: 0 1px 3px rgba(30, 27, 24, 0.06), 0 6px 18px rgba(30, 27, 24, 0.04);
+      --shadow-hover: 0 12px 32px rgba(30, 27, 24, 0.08);
+      --font: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text-main); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+    .topbar { position: sticky; top: 0; z-index: 50; background: rgba(247, 245, 242, 0.82); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+    .topbar-inner { max-width: 1320px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .logo { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, var(--primary) 0%, var(--accent-gold) 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 18px; letter-spacing: 0.5px; box-shadow: 0 4px 14px rgba(216, 106, 69, 0.25); }
+    .brand-text h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .brand-text p { margin: 0; font-size: 12px; color: var(--text-tertiary); }
+    .nav { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nav a { padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; transition: all 0.2s ease; border: 1px solid transparent; }
+    .nav a:hover, .nav a.active { background: var(--surface); color: var(--primary); border-color: var(--border); box-shadow: var(--shadow); }
+    .container { max-width: 1320px; margin: 0 auto; padding: 32px 24px 80px; }
+    .page { display: none; }
+    .page.active { display: block; animation: fadeIn 0.35s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+    .page-header { margin-bottom: 26px; }
+    .page-header h2 { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -0.4px; }
+    .page-header p { margin: 0; color: var(--text-secondary); font-size: 14px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .card-title { font-size: 15px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 10px; }
+    .card-title .icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 24px; }
+    @media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2, 1fr);} }
+    @media (max-width: 560px) { .kpi-grid { grid-template-columns: 1fr;} }
+    .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 22px 18px; box-shadow: var(--shadow); position: relative; overflow: hidden; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--accent-gold)); opacity: 0.85; }
+    .kpi-label { font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .kpi-value { font-size: 32px; font-weight: 700; color: var(--text-main); letter-spacing: -0.8px; margin-bottom: 6px; }
+    .kpi-delta { font-size: 12px; font-weight: 500; color: var(--success); display: flex; align-items: center; gap: 4px; }
+    .kpi-delta.negative { color: var(--danger); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .four-col { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    @media (max-width: 1024px) { .two-col, .three-col, .four-col { grid-template-columns: 1fr; } }
+    .section { margin-bottom: 28px; }
+    .section-title { font-size: 16px; font-weight: 700; margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
+    .section-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+    .chart-wrapper { position: relative; height: 260px; }
+    .chart-wrapper.sm { height: 200px; }
+    .table-wrap { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table th, .table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    .table th { font-weight: 600; color: var(--text-tertiary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; background: var(--surface-elevated); }
+    .table tr:last-child td { border-bottom: none; }
+    .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-primary { background: var(--primary-soft); color: var(--primary); }
+    .badge-success { background: #E8F3EB; color: var(--success); }
+    .badge-warning { background: #F7F0E0; color: #9A7D2E; }
+    .badge-slate { background: #EAEEF3; color: var(--accent-slate); }
+    .badge-danger { background: #F7E8E6; color: var(--danger); }
+    .big-num { text-align: center; padding: 18px 0; }
+    .big-num .num { font-size: 42px; font-weight: 700; color: var(--text-main); letter-spacing: -1px; }
+    .big-num .label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+    .module-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    @media (max-width: 1024px) { .module-grid { grid-template-columns: repeat(2, 1fr);} }
+    @media (max-width: 560px) { .module-grid { grid-template-columns: 1fr;} }
+    .module-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; gap: 10px; }
+    .module-card:hover { border-color: var(--primary-light); box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+    .module-card .icon-box { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .module-card h4 { margin: 0; font-size: 14px; font-weight: 600; }
+    .module-card p { margin: 0; font-size: 12px; color: var(--text-tertiary); line-height: 1.45; }
+    .progress-wrap { margin-bottom: 14px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: var(--text-secondary); }
+    .progress-label strong { color: var(--text-main); }
+    .progress-track { height: 8px; background: rgba(30, 27, 24, 0.06); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--primary), var(--accent-gold)); transition: width 0.8s ease; }
+    .footer-note { text-align: center; color: var(--text-tertiary); font-size: 12px; margin-top: 40px; }
+  </style>
+</head>
+<body>
+<nav class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="logo">E</div>
+      <div class="brand-text"><h1>EAZO</h1><p>海外社媒数据看板</p></div>
+    </div>
+    <div class="nav">
+      <a href="#overview" class="active" onclick="showPage('overview', this)">总览</a>
+      <a href="#level1" onclick="showPage('level1', this)">一级 · 总量看板</a>
+      <a href="#level2" onclick="showPage('level2', this)">二级 · 创意效果</a>
+      <a href="#level3" onclick="showPage('level3', this)">三级 · 效果指标</a>
+      <a href="#level4" onclick="showPage('level4', this)">四级 · 执行指标</a>
+    </div>
+  </div>
+</nav>
+<div class="container">
+  
+  <div id="overview" class="page active">
+    <div class="page-header"><h2>运营总览</h2><p>聚合一级至四级核心数据，快速掌握 EAZO 海外社媒运营健康度。</p></div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">总发布视频</div><div class="kpi-value">14,907</div><div class="kpi-delta">覆盖 5 个平台</div></div>
+      <div class="kpi-card"><div class="kpi-label">播放总量</div><div class="kpi-value">301,240</div><div class="kpi-delta">平均单条 20.21 播放</div></div>
+      <div class="kpi-card"><div class="kpi-label">互动率 ER</div><div class="kpi-value">0.15%</div><div class="kpi-delta">449.0 点赞 · 13.0 评论</div></div>
+      <div class="kpi-card"><div class="kpi-label">有效发布量</div><div class="kpi-value">24,141</div><div class="kpi-delta">3,889 封号 · 5,330 删除</div></div>
+    </div>
+    <div class="section"><h3 class="section-title"><span class="dot"></span>看板模块入口</h3><div class="module-grid"><div class="module-card" onclick="showPage('level1', document.querySelector('a[href=\"#level1\"]'))"><div class="icon-box" style="background:#FCECE6;color:#D86A45">1</div><h4>一级 · 总量看板</h4><p>总发布 14,907 · 总播放 301,240</p></div><div class="module-card" onclick="showPage('level2', document.querySelector('a[href=\"#level2\"]'))"><div class="icon-box" style="background:#F7F0E0;color:#9A7D2E">2</div><h4>二级 · 创意效果</h4><p>100 模板 · 25 人设</p></div><div class="module-card" onclick="showPage('level3', document.querySelector('a[href=\"#level3\"]'))"><div class="icon-box" style="background:#E8F3EB;color:#5A8F6A">3</div><h4>三级 · 效果指标</h4><p>5 平台 · ER 0.15%</p></div><div class="module-card" onclick="showPage('level4', document.querySelector('a[href=\"#level4\"]'))"><div class="icon-box" style="background:#EAEEF3;color:#5E718B">4</div><h4>四级 · 执行指标</h4><p>完成率 81.1% · 留存 66.9%</p></div></div></div>
+    <div class="section"><h3 class="section-title"><span class="dot"></span>平台发布量分布</h3><div class="card"><div class="chart-wrapper"><canvas id="overview_platform_bar"></canvas></div></div></div>
+  </div>
+
+  <div id="level1" class="page">
+    <div class="page-header"><h2>一级 · 总量看板</h2><p>核心总量指标与平台分布。</p></div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">总发布视频</div><div class="kpi-value">14,907</div></div>
+      <div class="kpi-card"><div class="kpi-label">播放总量</div><div class="kpi-value">301,240</div></div>
+      <div class="kpi-card"><div class="kpi-label">平均播放量</div><div class="kpi-value">20.21</div></div>
+      <div class="kpi-card"><div class="kpi-label">互动率 ER</div><div class="kpi-value">0.15%</div></div>
+    </div>
+    <div class="two-col">
+      <div class="card"><div class="card-header"><h3 class="card-title"><span class="icon" style="background:#FCECE6;color:#D86A45">●</span>平台发布量占比</h3></div><div class="chart-wrapper"><canvas id="l1_posts_doughnut"></canvas></div></div>
+      <div class="card"><div class="card-header"><h3 class="card-title"><span class="icon" style="background:#EAEEF3;color:#5E718B">●</span>平台播放量占比</h3></div><div class="chart-wrapper"><canvas id="l1_views_doughnut"></canvas></div></div>
+    </div>
+    <div class="section"><div class="card"><div class="card-header"><h3 class="card-title"><span class="icon" style="background:#E8F3EB;color:#5A8F6A">●</span>平台明细</h3></div><div class="table-wrap"><table class="table"><thead><tr><th>平台</th><th>发布量</th><th>总播放</th><th>点赞</th><th>评论</th><th>粉丝</th></tr></thead><tbody><tr><td><span class="badge badge-primary">facebook</span></td><td>830</td><td>36,690</td><td>68</td><td>0</td><td>0</td></tr><tr><td><span class="badge badge-primary">ins</span></td><td>3,138</td><td>122,046</td><td>0</td><td>0</td><td>45</td></tr><tr><td><span class="badge badge-primary">threads</span></td><td>3,098</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td><span class="badge badge-primary">tiktok</span></td><td>5,309</td><td>94,914</td><td>184</td><td>5</td><td>70</td></tr><tr><td><span class="badge badge-primary">youtube</span></td><td>2,532</td><td>47,590</td><td>197</td><td>8</td><td>118</td></tr></tbody></table></div></div></div>
+  </div>
+
+  <div id="level2" class="page">
+    <div class="page-header"><h2>二级 · 创意效果</h2><p>模板、人设、Hook 与 CTA 结构分析。</p></div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">内容模板数</div><div class="kpi-value">100</div></div>
+      <div class="kpi-card"><div class="kpi-label">覆盖 Persona</div><div class="kpi-value">25</div></div>
+      <div class="kpi-card"><div class="kpi-label">覆盖 Miniapp</div><div class="kpi-value">100</div></div>
+      <div class="kpi-card"><div class="kpi-label">主导 CTA</div><div class="kpi-value">Comment “app” to try it.</div></div>
+    </div>
+    <div class="two-col">
+      <div class="card"><div class="card-header"><h3 class="card-title"><span class="icon" style="background:#FCECE6;color:#D86A45">●</span>CTA 分布</h3></div><div class="chart-wrapper"><canvas id="l2_cta_bar"></canvas></div></div>
+      <div class="card"><div class="card-header"><h3 class="card-title"><span class="icon" style="background:#F7F0E0;color:#9A7D2E">●</span>微人设 Top</h3></div><div class="chart-wrapper"><canvas id="l2_persona_bar"></canvas></div></div>
+    </div>
+  </div>
+
+  <div id="level3" class="page">
+    <div class="page-header"><h2>三级 · 效果指标</h2><p>分平台发布、播放、互动与粉丝表现。</p></div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">今日播放</div><div class="kpi-value">301,240.0</div></div>
+      <div class="kpi-card"><div class="kpi-label">总粉丝数</div><div class="kpi-value">233.0</div></div>
+      <div class="kpi-card"><div class="kpi-label">总点赞</div><div class="kpi-value">449.0</div></div>
+      <div class="kpi-card"><div class="kpi-label">总评论</div><div class="kpi-value">13.0</div></div>
+    </div>
+    <div class="section"><div class="card"><div class="card-header"><h3 class="card-title"><span class="icon" style="background:#FCECE6;color:#D86A45">●</span>平台效果对比</h3></div><div class="chart-wrapper"><canvas id="l3_effect_bar"></canvas></div></div></div>
+    <div class="section"><div class="card"><div class="card-header"><h3 class="card-title"><span class="icon" style="background:#EAEEF3;color:#5E718B">●</span>平台效果明细</h3></div><div class="table-wrap"><table class="table"><thead><tr><th>平台</th><th>发布量</th><th>总播放</th><th>点赞</th><th>评论</th><th>互动率</th><th>粉丝</th></tr></thead><tbody><tr><td><span class="badge badge-primary">facebook</span></td><td>2,992</td><td>36,690</td><td>68</td><td>0</td><td>0.19%</td><td>0</td></tr><tr><td><span class="badge badge-primary">ins</span></td><td>7,983</td><td>122,046</td><td>0</td><td>0</td><td>0.00%</td><td>45</td></tr><tr><td><span class="badge badge-primary">threads</span></td><td>7,043</td><td>0</td><td>0</td><td>0</td><td>0.00%</td><td>0</td></tr><tr><td><span class="badge badge-primary">tiktok</span></td><td>6,539</td><td>94,914</td><td>184</td><td>5</td><td>0.20%</td><td>70</td></tr><tr><td><span class="badge badge-primary">youtube</span></td><td>6,815</td><td>47,590</td><td>197</td><td>8</td><td>0.43%</td><td>118</td></tr></tbody></table></div></div></div>
+  </div>
+
+  <div id="level4" class="page">
+    <div class="page-header"><h2>四级 · 执行指标</h2><p>计划完成、留存、失败、删除与封号监控。</p></div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">计划发布量</div><div class="kpi-value">28,077</div></div>
+      <div class="kpi-card"><div class="kpi-label">实际执行量</div><div class="kpi-value">31,582</div></div>
+      <div class="kpi-card"><div class="kpi-label">发布完成率</div><div class="kpi-value">81.06%</div></div>
+      <div class="kpi-card"><div class="kpi-label">24h 留存率</div><div class="kpi-value">66.92%</div></div>
+    </div>
+    <div class="two-col">
+      <div class="card"><div class="card-header"><h3 class="card-title"><span class="icon" style="background:#E8F3EB;color:#5A8F6A">●</span>有效发布 / 计划发布</h3></div><div class="progress-wrap"><div class="progress-label"><strong>facebook</strong><span>2,738 / 2,800 (97.8%)</span></div><div class="progress-track"><div class="progress-fill" style="width:97.8%;background:var(--primary)"></div></div></div>
+<div class="progress-wrap"><div class="progress-label"><strong>ins</strong><span>5,588 / 6,900 (81.0%)</span></div><div class="progress-track"><div class="progress-fill" style="width:81.0%;background:var(--primary)"></div></div></div>
+<div class="progress-wrap"><div class="progress-label"><strong>threads</strong><span>5,417 / 6,000 (90.3%)</span></div><div class="progress-track"><div class="progress-fill" style="width:90.3%;background:var(--primary)"></div></div></div>
+<div class="progress-wrap"><div class="progress-label"><strong>tiktok</strong><span>6,382 / 6,277 (101.7%)</span></div><div class="progress-track"><div class="progress-fill" style="width:101.7%;background:var(--primary)"></div></div></div>
+<div class="progress-wrap"><div class="progress-label"><strong>youtube</strong><span>4,016 / 6,100 (65.8%)</span></div><div class="progress-track"><div class="progress-fill" style="width:65.8%;background:var(--primary)"></div></div></div></div>
+      <div class="card"><div class="card-header"><h3 class="card-title"><span class="icon" style="background:#F7F0E0;color:#9A7D2E">●</span>完成率 vs 留存率</h3></div><div class="chart-wrapper"><canvas id="l4_rate_bar"></canvas></div></div>
+    </div>
+    <div class="section"><div class="card"><div class="card-header"><h3 class="card-title"><span class="icon" style="background:#F7E8E6;color:#C45C52">●</span>风险监控</h3></div><div class="chart-wrapper sm"><canvas id="l4_risk_bar"></canvas></div></div></div>
+    <div class="section"><div class="card"><div class="card-header"><h3 class="card-title"><span class="icon" style="background:#EAEEF3;color:#5E718B">●</span>执行明细</h3></div><div class="table-wrap"><table class="table"><thead><tr><th>平台</th><th>计划</th><th>实际</th><th>有效</th><th>完成率</th><th>24h留存率</th><th>失败</th><th>删除</th><th>封号</th></tr></thead><tbody><tr><td><span class="badge badge-primary">facebook</span></td><td>2,800</td><td>3,062</td><td>2,738</td><td>84.14%</td><td>46.59%</td><td>955</td><td>889</td><td>889</td></tr><tr><td><span class="badge badge-primary">ins</span></td><td>6,900</td><td>8,053</td><td>5,588</td><td>76.13%</td><td>68.00%</td><td>2,305</td><td>2,184</td><td>1,498</td></tr><tr><td><span class="badge badge-primary">threads</span></td><td>6,000</td><td>7,043</td><td>5,417</td><td>76.28%</td><td>57.14%</td><td>983</td><td>1,631</td><td>860</td></tr><tr><td><span class="badge badge-primary">tiktok</span></td><td>6,277</td><td>6,539</td><td>6,382</td><td>95.23%</td><td>86.65%</td><td>104</td><td>472</td><td>488</td></tr><tr><td><span class="badge badge-primary">youtube</span></td><td>6,100</td><td>6,885</td><td>4,016</td><td>73.54%</td><td>76.21%</td><td>2,848</td><td>154</td><td>154</td></tr></tbody></table></div></div></div>
+  </div>
+  <div class="footer-note">数据更新时间：2026-08-25 15:30 · 来源：eazo_data.xlsx</div>
+</div>
+<script>
+const colors = { primary: '#D86A45', primaryLight: '#E88B6A', gold: '#C7A45E', olive: '#7A8B6E', slate: '#5E718B', danger: '#C45C52', text: '#1E1B18', muted: '#9A948D', grid: 'rgba(30,27,24,0.06)' };
+function showPage(id, el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active')); if(el) el.classList.add('active'); }
+Chart.defaults.font.family = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif";
+Chart.defaults.color = colors.muted;
+Chart.defaults.scale.grid.color = colors.grid;
+
+new Chart(document.getElementById('overview_platform_bar'), {
+  type: 'bar',
+  data: { labels: ["facebook", "ins", "threads", "tiktok", "youtube"], datasets: [{ label: '发布量', data: [830, 3138, 3098, 5309, 2532], backgroundColor: '#D86A45', borderRadius: 6 }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('l1_posts_doughnut'), {
+  type: 'doughnut',
+  data: { labels: ["facebook", "ins", "threads", "tiktok", "youtube"], datasets: [{ data: [830, 3138, 3098, 5309, 2532], backgroundColor: ["#D86A45", "#C7A45E", "#7A8B6E", "#5E718B", "#C45C52"], borderWidth: 0 }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, cutout: '65%' },
+  plugins: [{ id: 'centerText', afterDraw: function(chart) { drawCenter(chart, '14,907', '总发布') } }]
+});
+
+new Chart(document.getElementById('l1_views_doughnut'), {
+  type: 'doughnut',
+  data: { labels: ["facebook", "ins", "threads", "tiktok", "youtube"], datasets: [{ data: [36690, 122046, 0, 94914, 47590], backgroundColor: ["#D86A45", "#C7A45E", "#7A8B6E", "#5E718B", "#C45C52"], borderWidth: 0 }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, cutout: '65%' },
+  plugins: [{ id: 'centerText', afterDraw: function(chart) { drawCenter(chart, '301,240', '总播放') } }]
+});
+
+new Chart(document.getElementById('l2_cta_bar'), {
+  type: 'bar',
+  data: { labels: ["Comment “app” to try it.", "Comment “weird” to test it.", "Follow for one AI app every day.", "Follow before these apps go viral.", "Try one miniapp today.", "Comment “quiz” to test yours.", "Comment your mood today.", "Comment one word about your mood."], datasets: [{ label: '模板数', data: [4, 4, 4, 4, 4, 4, 4, 4], backgroundColor: '#D86A45', borderRadius: 6 }] },
+  options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('l2_persona_bar'), {
+  type: 'bar',
+  data: { labels: ["专业测评型", "朋友种草型", "搞笑吐槽型", "教程互动型"], datasets: [{ label: '模板数', data: [25, 25, 25, 25], backgroundColor: '#C7A45E', borderRadius: 6 }] },
+  options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('l3_effect_bar'), {
+  type: 'bar',
+  data: { labels: ["facebook", "ins", "threads", "tiktok", "youtube"], datasets: [
+    { label: '发布量', data: [830, 3138, 3098, 5309, 2532], backgroundColor: '#D86A45', borderRadius: 6 },
+    { label: '总播放', data: [36690, 122046, 0, 94914, 47590], backgroundColor: '#C7A45E', borderRadius: 6 },
+    { label: '点赞', data: [68, 0, 0, 184, 197], backgroundColor: '#7A8B6E', borderRadius: 6 },
+    { label: '评论', data: [0, 0, 0, 5, 8], backgroundColor: '#5E718B', borderRadius: 6 }
+  ] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('l4_rate_bar'), {
+  type: 'bar',
+  data: { labels: ["facebook", "ins", "threads", "tiktok", "youtube"], datasets: [
+    { label: '完成率 %', data: [84.14, 76.13, 76.28, 95.23, 73.54], backgroundColor: '#D86A45', borderRadius: 6 },
+    { label: '24h 留存率 %', data: [46.59, 68.0, 57.14, 86.65, 76.21], backgroundColor: '#7A8B6E', borderRadius: 6 }
+  ] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, max: 120 } } }
+});
+
+new Chart(document.getElementById('l4_risk_bar'), {
+  type: 'bar',
+  data: { labels: ["facebook", "ins", "threads", "tiktok", "youtube"], datasets: [
+    { label: '封号', data: [889, 1498, 860, 488, 154], backgroundColor: '#C45C52', borderRadius: 6 },
+    { label: '删除', data: [889, 2184, 1631, 472, 154], backgroundColor: '#C7A45E', borderRadius: 6 }
+  ] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+});
+function drawCenter(chart, big, small) { const ctx = chart.ctx, width = chart.width, height = chart.height; ctx.restore(); ctx.font = `bold ${(height/75).toFixed(2)}em Inter, sans-serif`; ctx.textBaseline = 'middle'; ctx.fillStyle = colors.text; const bx = Math.round((width - ctx.measureText(big).width)/2), by = height/2 - 6; ctx.fillText(big, bx, by); ctx.font = `normal ${(height/200).toFixed(2)}em Inter, sans-serif`; ctx.fillStyle = colors.muted; const sx = Math.round((width - ctx.measureText(small).width)/2); ctx.fillText(small, sx, by + 22); ctx.save(); }
+</script>
+</body>
+</html>
